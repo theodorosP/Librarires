@@ -159,7 +159,7 @@ def get_figure_2( sys0, fout, rot = "-30x", w = 15, h = 15 ):
            height/2-2.5,
            )
     write( fout+ '.pov', system, format = 'pov', run_povray = True,
-           canvas_width = 1000,    # Set width, in pixel
+           canvas_width = 1000,
            radii = radii,              # Set radius 
            bondatoms = bond_pairs, # Display bonds
            bbox  = bbox,
