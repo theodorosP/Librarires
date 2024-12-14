@@ -160,7 +160,7 @@ def get_figure_2( sys0, fout, rot = "-30x", w = 15, h = 15 ):
            )
     write( fout+ '.pov', system, format = 'pov', run_povray = True,
            canvas_width = 1000,
-           radii = radii,              # Set radius 
+           radii = radii,
            bondatoms = bond_pairs,
            bbox  = bbox,
            colors = colors,
@@ -168,7 +168,7 @@ def get_figure_2( sys0, fout, rot = "-30x", w = 15, h = 15 ):
            rotation = rot,
            hydrogenbond = { 'ndots':5, 'color' : [0., 1, 0.], 'rdot':0.05 }
            )
-    
+
 
 if __name__ == "__main__":
     system = read( 'POSCAR4' )
