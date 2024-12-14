@@ -163,7 +163,7 @@ def get_figure_2( sys0, fout, rot = "-30x", w = 15, h = 15 ):
            radii = radii,              # Set radius 
            bondatoms = bond_pairs, # Display bonds
            bbox  = bbox,
-           colors = colors,        # Set colors
+           colors = colors,
            celllinewidth = 0.0,
            rotation = rot,
            hydrogenbond = { 'ndots':5, 'color' : [0., 1, 0.], 'rdot':0.05 }
