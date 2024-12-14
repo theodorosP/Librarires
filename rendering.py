@@ -161,7 +161,7 @@ def get_figure_2( sys0, fout, rot = "-30x", w = 15, h = 15 ):
     write( fout+ '.pov', system, format = 'pov', run_povray = True,
            canvas_width = 1000,
            radii = radii,              # Set radius 
-           bondatoms = bond_pairs, # Display bonds
+           bondatoms = bond_pairs,
            bbox  = bbox,
            colors = colors,
            celllinewidth = 0.0,
