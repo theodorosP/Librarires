@@ -16,10 +16,10 @@ To install these libraries, clone the repository and use `pip` to install the re
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/yourrepository.git
+git clone https://github.com/theodorosP/Librarires.git
 
 # Navigate into the project directory
-cd yourrepository
+cd Libraries
 
 # Install dependencies
 pip install -r requirements.txt
