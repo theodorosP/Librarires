@@ -1,8 +1,17 @@
+import datetime
 from ase.io import read, write
 from ase.visualize import view
 from dlePy.vasp.chgcar import read_chgcar, write_chgcar
 from ase.build import add_adsorbate
 import numpy as np
+
+def read_chgcar( INDATA, CONTCAR = "CONTCAR" ):
+	print ( "Input data: ", INDATA )
+	print ( "Read ", INDATA )
+	print ( datetime.datetime.now() )
+	rho = VaspChargeDensity( INDATA )
+	print ( datetime.datetime.now() )
+	return rho
 
 
 # Function to generate the "ICONST" file for collective coordinates
