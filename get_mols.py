@@ -62,14 +62,14 @@ def get_Na_mols( poscar, to_print = "False" ):
 
 #Get H2O mols in the Na hydration shell 
 #H2O -> OH + H*
-def get_Na_hydration_shell( poscar, H2O_mols, Na_atoms, distance_threshold = 2.6, to_print = "False" ):
-	system = read( poscar )
-	au_indices = [ i for i, atom in enumerate( system ) if atom.symbol == "Au" ]
-	au_positions = system.positions[ au_indices ]
+def get_Na_hydration_shell(poscar, H2O_mols, Na_atoms, distance_threshold=2.6, to_print="False"):
+	system = read(poscar)
+	au_indices = [i for i, atom in enumerate(system) if atom.symbol == "Au"]
+	au_positions = system.positions[au_indices]
 
 	final_results = list()
 
-	for na_idx in Na_atoms:  
+	for na_idx in Na_atoms:
 		molecule_results = list()
 
 		for h2o in H2O_mols:
@@ -79,79 +79,60 @@ def get_Na_hydration_shell( poscar, H2O_mols, Na_atoms, distance_threshold = 2.6
 			if distance_to_oxygen > distance_threshold:
 				continue
 
-			distances_h1_to_au = cdist( [ system.positions[ h1_idx ] ], au_positions ).flatten()
-			distances_h2_to_au = cdist( [ system.positions[ h2_idx ] ], au_positions ).flatten()
+			distances_h1_to_au = cdist([system.positions[h1_idx]], au_positions).flatten()
+			distances_h2_to_au = cdist([system.positions[h2_idx]], au_positions).flatten()
 
-			min_h1_distance_to_au = np.min( distances_h1_to_au )
-			min_h2_distance_to_au = np.min( distances_h2_to_au )
+			min_h1_distance_to_au = np.min(distances_h1_to_au)
+			min_h2_distance_to_au = np.min(distances_h2_to_au)
 
-			if min_h1_distance_to_au < min_h2_distance_to_au:
-				closest_h2o_h_idx = h1_idx
-				min_distance_to_au = min_h1_distance_to_au
-				closest_au_idx = au_indices[ np.argmin( distances_h1_to_au ) ]
-			else:
-				closest_h2o_h_idx = h2_idx
-				min_distance_to_au = min_h2_distance_to_au
-				closest_au_idx = au_indices[ np.argmin( distances_h2_to_au ) ]
+			closest_au_h1_idx = au_indices[np.argmin(distances_h1_to_au)]
+			closest_au_h2_idx = au_indices[np.argmin(distances_h2_to_au)]
 
-			molecule_results.append({
-				"[Na]": [na_idx],
-				"[H1, O, H2]": [h1_idx, o_idx, h2_idx],
-				"[Au]": [closest_au_idx],
-				"[H - Au]": [f"{closest_h2o_h_idx} - {closest_au_idx} = {round(min_distance_to_au, 3)}"],
-				"[Na - O H2O]": round(distance_to_oxygen, 3),
-				"O-H": [o_idx, closest_h2o_h_idx ]
-			})
+			molecule_results.append({ "[Na]": [na_idx], "[H1, O, H2]": [h1_idx, o_idx, h2_idx], "[Au]": [closest_au_h1_idx, closest_au_h2_idx], "[H1 - Au]": [f"{h1_idx} - {closest_au_h1_idx} = {round(min_h1_distance_to_au, 3)}"], "[H2 - Au]": [f"{h2_idx} - {closest_au_h2_idx} = {round(min_h2_distance_to_au, 3)}"], "[Na - O H2O]": round(distance_to_oxygen, 3), } )
 
-		molecule_results.sort( key=lambda x: float( x["[H - Au]" ][ 0 ].split( '= ' )[ 1 ] ) )
+		molecule_results.sort(key=lambda x: float(x["[H1 - Au]"][0].split(" = ")[1]))
 		final_results.extend( molecule_results )
 
 		if to_print == "True":
 			for result in molecule_results:
-				print( result )
-			print( "\n" )
+				print(result)
+			print("\n")
 
 	return final_results
 
 #Get H2O mols NOT in the Na hydration shell 
 #H2O -> OH + H*
-def get_non_Na_hydration_shell(poscar, H2O_mols, Na_atoms, distance_threshold=2.6, to_print="False"):
-	system = read( poscar )
-	au_indices = [ i for i, atom in enumerate(system) if atom.symbol == "Au" ]
-	au_positions = system.positions[ au_indices ]
-	non_hydration_H2O = list()
+def get_non_Na_hydration_shell( poscar, H2O_mols, Na_atoms, distance_threshold = 2.7, to_print = "False" ):
+    system = read( poscar )
+    au_indices = [ i for i, atom in enumerate( system ) if atom.symbol == "Au" ]
+    au_positions = system.positions[ au_indices ]
+    non_hydration_H2O = list()
 
-	for h2o in H2O_mols:
-		h1_idx, o_idx, h2_idx = h2o
+    for h2o in H2O_mols:
+        h1_idx, o_idx, h2_idx = h2o
+        is_in_hydration_shell = any(
+            np.linalg.norm( system.positions[ o_idx ] - system.positions[ na_idx ] ) <= distance_threshold
+            for na_idx in Na_atoms
+        )
+        if not is_in_hydration_shell:
+            distances_h1_to_au = cdist( [ system.positions[ h1_idx ] ], au_positions ).flatten()
+            distances_h2_to_au = cdist( [ system.positions[ h2_idx ] ], au_positions ).flatten()
+            closest_au_h1_idx = au_indices[ np.argmin( distances_h1_to_au ) ]
+            closest_au_h2_idx = au_indices[ np.argmin( distances_h2_to_au ) ]
+            min_h1_distance_to_au = np.min( distances_h1_to_au )
+            min_h2_distance_to_au = np.min( distances_h2_to_au )
+            non_hydration_H2O.append({
+                "H2O": [ h1_idx, o_idx, h2_idx ],
+                f"{h1_idx}-{closest_au_h1_idx}": round( min_h1_distance_to_au, 3 ),
+                f"{h2_idx}-{closest_au_h2_idx}": round( min_h2_distance_to_au, 3 )
+            })
+    sorted_list = sorted( non_hydration_H2O, key=lambda d: list(d.values() )[ 1 ] )
+    if to_print == "True":
+        print( "H2O molecules not in Na hydration shell:" )
+        for h2o in sorted_list:
+            print( h2o )
+    return non_hydration_H2O
 
-		is_in_hydration_shell = False
-		for na_idx in Na_atoms:
-			distance_to_oxygen = np.linalg.norm(system.positions[o_idx] - system.positions[na_idx])
-			if distance_to_oxygen <= distance_threshold:
-				is_in_hydration_shell = True
-				break  
-
-		if not is_in_hydration_shell:
-			distances_h1_to_au = cdist( [ system.positions[ h1_idx ] ], au_positions ).flatten()
-			distances_h2_to_au = cdist( [ system.positions[ h2_idx ] ], au_positions ).flatten()
-
-			closest_au_h1_idx = au_indices[ np.argmin(distances_h1_to_au ) ]
-			closest_au_h2_idx = au_indices[ np.argmin(distances_h2_to_au ) ]
-
-			min_h1_distance_to_au = np.min( distances_h1_to_au )
-			min_h2_distance_to_au = np.min( distances_h2_to_au )
-
-			non_hydration_H2O.append({
-				"H2O": [ h1_idx, o_idx, h2_idx ],
-				f"{h1_idx}-{closest_au_h1_idx}": round(min_h1_distance_to_au, 3),
-				f"{h2_idx}-{closest_au_h2_idx}": round(min_h2_distance_to_au, 3)
-			})
-	sorted_list = sorted( non_hydration_H2O, key=lambda d: list( d.values() )[ 1 ] )
-	if to_print == "True":
-		print("H2O molecules not in Na hydration shell:")
-		for h2o in sorted_list:
-			print(h2o)
-	return non_hydration_H2O
 
 ################################## NH4 molecules ##################################
 
@@ -213,16 +194,16 @@ def get_NH4_within_surface_threshold( poscar, NH4_mols, distance_threshold = 5.6
 #H2O molecules that belong to NH4 hydration shell
 #For shuttling always
 #For H2O -> OH + H* if H of H2O is close to electrode
-def get_NH4_hydration_shell( poscar, H2O_mols, NH4_molecules, distance_threshold=2.6, to_print = "False" ):
-	system = read( poscar )
-	au_indices = [ i for i, atom in enumerate( system ) if atom.symbol == "Au" ]
-	au_positions = system.positions[ au_indices ]
+def get_NH4_hydration_shell(poscar, H2O_mols, NH4_molecules, distance_threshold=2.6, to_print="False"):
+	system = read(poscar)
+	au_indices = [i for i, atom in enumerate(system) if atom.symbol == "Au"]
+	au_positions = system.positions[au_indices]
 
 	final_results = list()
 
 	for nh4 in NH4_molecules:
 		n_idx, h1_nh4_idx, h2_nh4_idx, h3_nh4_idx, h4_nh4_idx = nh4
-		NH4_H_indices = [ h1_nh4_idx, h2_nh4_idx, h3_nh4_idx, h4_nh4_idx ]
+		NH4_H_indices = [h1_nh4_idx, h2_nh4_idx, h3_nh4_idx, h4_nh4_idx]
 
 		molecule_results = list()
 
@@ -230,9 +211,9 @@ def get_NH4_hydration_shell( poscar, H2O_mols, NH4_molecules, distance_threshold
 			h1_idx, o_idx, h2_idx = h2o
 
 			closest_nh4_h_to_h2o = None
-			min_distance_to_nh4_h = float( 'inf' )
+			min_distance_to_nh4_h = float('inf')
 			for h_nh4_idx in NH4_H_indices:
-				distance = np.linalg.norm( system.positions[ o_idx ] - system.positions[ h_nh4_idx ] )
+				distance = np.linalg.norm(system.positions[o_idx] - system.positions[h_nh4_idx])
 				if distance < distance_threshold and distance < min_distance_to_nh4_h:
 					closest_nh4_h_to_h2o = h_nh4_idx
 					min_distance_to_nh4_h = distance
@@ -240,39 +221,38 @@ def get_NH4_hydration_shell( poscar, H2O_mols, NH4_molecules, distance_threshold
 			if closest_nh4_h_to_h2o is None:
 				continue
 
-			distances_h1_to_au = cdist( [ system.positions[ h1_idx ] ], au_positions ).flatten()
-			distances_h2_to_au = cdist( [ system.positions[ h2_idx ] ], au_positions ).flatten()
+			distances_h1_to_au = cdist([system.positions[h1_idx]], au_positions).flatten()
+			distances_h2_to_au = cdist([system.positions[h2_idx]], au_positions).flatten()
 
-			min_h1_distance_to_au = np.min( distances_h1_to_au )
-			min_h2_distance_to_au = np.min( distances_h2_to_au )
+			min_h1_distance_to_au = np.min(distances_h1_to_au)
+			min_h2_distance_to_au = np.min(distances_h2_to_au)
 
-			if min_h1_distance_to_au < min_h2_distance_to_au:
-				closest_h2o_h_idx = h1_idx
-				min_distance_to_au = min_h1_distance_to_au
-				closest_au_idx = au_indices[ np.argmin( distances_h1_to_au ) ]
-			else:
-				closest_h2o_h_idx = h2_idx
-				min_distance_to_au = min_h2_distance_to_au
-				closest_au_idx = au_indices[ np.argmin( distances_h2_to_au ) ]
+			closest_au1_idx = au_indices[np.argmin(distances_h1_to_au)]
+			closest_au2_idx = au_indices[np.argmin(distances_h2_to_au)]
+
+			# Calculate the distance between N and O
+			distance_n_to_o = np.linalg.norm(system.positions[n_idx] - system.positions[o_idx])
+
 			molecule_results.append({
 				"[N, H1, H2, H3, H4]": [n_idx, h1_nh4_idx, h2_nh4_idx, h3_nh4_idx, h4_nh4_idx],
 				"[H1, O, H2]": [h1_idx, o_idx, h2_idx],
-				"[Au]": [closest_au_idx],
-				"[H - Au]": [f"{closest_h2o_h_idx} - {closest_au_idx} = {round(min_distance_to_au, 3)}"],
+				"H1-Au1": f"{h1_idx} - {closest_au1_idx} = {round(min_h1_distance_to_au, 3)}",
+				"H2-Au2": f"{h2_idx} - {closest_au2_idx} = {round(min_h2_distance_to_au, 3)}",
 				"[H - O NH4-H2O]": round(min_distance_to_nh4_h, 3),
-				"O-H-H_NH4": [o_idx, closest_h2o_h_idx, closest_nh4_h_to_h2o]
+				"N-O Distance": round(distance_n_to_o, 3)
 			})
-		molecule_results.sort(key=lambda x: float( x[ "[H - Au]" ][ 0 ].split( '= ' )[ 1 ] ) )
-		final_results.extend( molecule_results )
+
+		molecule_results.sort(key=lambda x: float(x["H1-Au1"].split('= ')[1]))
+		final_results.extend(molecule_results)
 		if to_print == "True":
 			for result in molecule_results:
-				print( result )
-			print( "\n" )
+				print(result)
+			print("\n")
 	return final_results
 
 #H2O molecules that not belong to NH4 hydration shel
 #H2O -> OH + H*
-def get_non_NH4_hydration(poscar, H2O_mols, NH4_molecules, distance_threshold=2.6, to_print="False"):
+def get_non_NH4_hydration_shell(poscar, H2O_mols, NH4_molecules, distance_threshold=2.6, to_print="False"):
 	system = read(poscar)
 	au_indices = [i for i, atom in enumerate(system) if atom.symbol == "Au"]
 	au_positions = system.positions[au_indices]
@@ -493,5 +473,5 @@ def get_non_CH3NH3_hydration_shell( poscar, H2O_mols, CH3NH3_molecules, distance
 
 if __name__ == "__main__":
 	H2O_mols = get_H2O_mols( "POSCAR" )
-	Na_mols = get_Na_mols( "POSCAR" )
-	get_non_Na_hydration_shell( "POSCAR", H2O_mols, Na_mols, to_print = "True" )
+	NH4_mols = get_NH4_mols( "POSCAR" )
+	get_NH4_hydration_shell( "POSCAR", H2O_mols, NH4_mols, to_print = "True" )
