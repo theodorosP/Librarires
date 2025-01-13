@@ -32,9 +32,9 @@ def get_ICONST( atoms_list, choice = None ):
 def shift_center( system, N:int ):
 	if N < 0 or N >= len(system):
 		raise ValueError(f"Invalid atom index {N}. It must be between 0 and {len(system) - 1}.")
-	center = system[N].position
-	shift = -center + 0.5 * (system.cell[0] + system.cell[1])
-	shift[2] = 0
+	center = system[ N ].position
+	shift = -center + 0.5 * ( system.cell[ 0 ] + system.cell[ 1 ] )
+	shift[ 2 ] = 0
 	for atom in system:
 		atom.position += shift
 	system.wrap()
@@ -77,11 +77,11 @@ def change_atomic_number( system, lst ):
             system[ i ].number = 2
     view( system )
 
-def delete_from_list(list_, elements_to_delete):
-    elements_to_delete.sort(reverse = True)
+def delete_from_list( list_, elements_to_delete ):
+    elements_to_delete.sort( reverse = True )
     for i in elements_to_delete:
-        del l[i]
-    print(l)
+        del l[ i ]
+    print( l )
     return l
 
 def total_charge( file ):
